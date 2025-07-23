@@ -39,7 +39,15 @@ server.tool(
         throw new Error("GITHUB_TOKEN environment variable is required");
       }
       if (!claudeCommentId) {
-        throw new Error("CLAUDE_COMMENT_ID environment variable is required");
+        // Gracefully handle missing comment ID - comments are disabled
+        return {
+          content: [
+            {
+              type: "text",
+              text: "Comment operations disabled - no comment ID provided. Continuing without updating comments.",
+            },
+          ],
+        };
       }
 
       const owner = REPO_OWNER;

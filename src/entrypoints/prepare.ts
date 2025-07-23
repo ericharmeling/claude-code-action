@@ -102,6 +102,7 @@ async function run() {
       claudeCommentId: commentId?.toString(),
       allowedTools: context.inputs.allowedTools,
       context,
+      disableComments: context.inputs.disableComments,
     });
     core.setOutput("mcp_config", mcpConfig);
   } catch (error) {

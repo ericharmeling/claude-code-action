@@ -70,6 +70,7 @@ describe("checkWritePermissions", () => {
       overridePrompt: "",
       branchPrefix: "claude/",
       useStickyComment: false,
+      disableComments: false,
       additionalPermissions: new Map(),
       useCommitSigning: false,
     },
