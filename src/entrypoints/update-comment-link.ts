@@ -16,6 +16,13 @@ import { updateClaudeComment } from "../github/operations/comments/update-claude
 
 async function run() {
   try {
+    // Skip all comment operations if comments are disabled
+    const disableComments = process.env.DISABLE_COMMENTS === "true";
+    if (disableComments) {
+      console.log("Comments are disabled, skipping comment update");
+      process.exit(0);
+    }
+
     const commentId = parseInt(process.env.CLAUDE_COMMENT_ID!);
     const githubToken = process.env.GITHUB_TOKEN!;
     const claudeBranch = process.env.CLAUDE_BRANCH;

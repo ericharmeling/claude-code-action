@@ -50,9 +50,14 @@ async function run() {
     // Step 5: Check if actor is human
     await checkHumanActor(octokit.rest, context);
 
-    // Step 6: Create initial tracking comment
-    const commentData = await createInitialComment(octokit.rest, context);
-    const commentId = commentData.id;
+    // Step 6: Create initial tracking comment (skip if comments are disabled)
+    let commentId: number | undefined;
+    let commentData: any | undefined;
+
+    if (!context.inputs.disableComments) {
+      commentData = await createInitialComment(octokit.rest, context);
+      commentId = commentData.id;
+    }
 
     // Step 7: Fetch GitHub data (once for both branch setup and prompt creation)
     const githubData = await fetchGitHubData({
@@ -69,7 +74,7 @@ async function run() {
     // Step 9: Configure git authentication if not using commit signing
     if (!context.inputs.useCommitSigning) {
       try {
-        await configureGitAuth(githubToken, context, commentData.user);
+        await configureGitAuth(githubToken, context, commentData?.user);
       } catch (error) {
         console.error("Failed to configure git authentication:", error);
         throw error;
@@ -94,7 +99,7 @@ async function run() {
       branch: branchInfo.claudeBranch || branchInfo.currentBranch,
       baseBranch: branchInfo.baseBranch,
       additionalMcpConfig,
-      claudeCommentId: commentId.toString(),
+      claudeCommentId: commentId?.toString(),
       allowedTools: context.inputs.allowedTools,
       context,
     });

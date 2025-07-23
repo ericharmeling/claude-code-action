@@ -38,6 +38,7 @@ export type ParsedGitHubContext = {
     baseBranch?: string;
     branchPrefix: string;
     useStickyComment: boolean;
+    disableComments: boolean;
     additionalPermissions: Map<string, string>;
     useCommitSigning: boolean;
   };
@@ -68,6 +69,7 @@ export function parseGitHubContext(): ParsedGitHubContext {
       baseBranch: process.env.BASE_BRANCH,
       branchPrefix: process.env.BRANCH_PREFIX ?? "claude/",
       useStickyComment: process.env.USE_STICKY_COMMENT === "true",
+      disableComments: process.env.DISABLE_COMMENTS === "true",
       additionalPermissions: parseAdditionalPermissions(
         process.env.ADDITIONAL_PERMISSIONS ?? "",
       ),
