@@ -8,6 +8,22 @@ import type {
   PullRequestReviewCommentEvent,
 } from "@octokit/webhooks-types";
 
+// Type for workflow_dispatch event
+interface WorkflowDispatchEvent {
+  inputs: { [key: string]: string };
+  ref: string;
+  repository: {
+    name: string;
+    full_name: string;
+    owner: {
+      login: string;
+    };
+  };
+  sender: {
+    login: string;
+  };
+}
+
 export type ParsedGitHubContext = {
   runId: string;
   eventName: string;
@@ -23,7 +39,8 @@ export type ParsedGitHubContext = {
     | IssueCommentEvent
     | PullRequestEvent
     | PullRequestReviewEvent
-    | PullRequestReviewCommentEvent;
+    | PullRequestReviewCommentEvent
+    | WorkflowDispatchEvent;
   entityNumber: number;
   isPR: boolean;
   inputs: {
@@ -122,6 +139,14 @@ export function parseGitHubContext(): ParsedGitHubContext {
         isPR: true,
       };
     }
+    case "workflow_dispatch": {
+      return {
+        ...commonFields,
+        payload: context.payload as WorkflowDispatchEvent,
+        entityNumber: 0, // workflow_dispatch doesn't have an issue/PR number
+        isPR: false,
+      };
+    }
     default:
       throw new Error(`Unsupported event type: ${context.eventName}`);
   }
@@ -188,4 +213,10 @@ export function isIssuesAssignedEvent(
   context: ParsedGitHubContext,
 ): context is ParsedGitHubContext & { payload: IssuesAssignedEvent } {
   return isIssuesEvent(context) && context.eventAction === "assigned";
+}
+
+export function isWorkflowDispatchEvent(
+  context: ParsedGitHubContext,
+): context is ParsedGitHubContext & { payload: WorkflowDispatchEvent } {
+  return context.eventName === "workflow_dispatch";
 }

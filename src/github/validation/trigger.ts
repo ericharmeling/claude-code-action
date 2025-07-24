@@ -8,6 +8,7 @@ import {
   isPullRequestEvent,
   isPullRequestReviewEvent,
   isPullRequestReviewCommentEvent,
+  isWorkflowDispatchEvent,
 } from "../context";
 import type { ParsedGitHubContext } from "../context";
 
@@ -19,6 +20,12 @@ export function checkContainsTrigger(context: ParsedGitHubContext): boolean {
   // If direct prompt is provided, always trigger
   if (directPrompt) {
     console.log(`Direct prompt provided, triggering action`);
+    return true;
+  }
+
+  // Check for workflow_dispatch trigger
+  if (isWorkflowDispatchEvent(context)) {
+    console.log(`Workflow dispatch event detected, triggering action`);
     return true;
   }
 
