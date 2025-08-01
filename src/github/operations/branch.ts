@@ -96,7 +96,9 @@ export async function setupBranch(
   // - Alphanumeric with hyphens
   // - No underscores
   // - Max 50 chars (to allow for prefixes)
-  const branchName = `${branchPrefix}${entityType}-${entityNumber}-${timestamp}`;
+  // For workflow_dispatch without entity number, use "dispatch" instead
+  const entityIdentifier = entityNumber > 0 ? `${entityType}-${entityNumber}` : "dispatch";
+  const branchName = `${branchPrefix}${entityIdentifier}-${timestamp}`;
   const newBranch = branchName.toLowerCase().substring(0, 50);
 
   try {

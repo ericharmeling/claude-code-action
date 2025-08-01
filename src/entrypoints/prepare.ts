@@ -50,23 +50,50 @@ async function run() {
     // Step 5: Check if actor is human
     await checkHumanActor(octokit.rest, context);
 
-    // Step 6: Create initial tracking comment (skip if comments are disabled)
+    // Step 6: Create initial tracking comment (skip if comments are disabled or no entity number)
     let commentId: number | undefined;
     let commentData: any | undefined;
 
-    if (!context.inputs.disableComments) {
+    if (!context.inputs.disableComments && context.entityNumber > 0) {
       commentData = await createInitialComment(octokit.rest, context);
       commentId = commentData.id;
+    } else if (!context.inputs.disableComments && context.entityNumber === 0) {
+      console.log("Skipping comment creation for workflow_dispatch without issue number");
     }
 
     // Step 7: Fetch GitHub data (once for both branch setup and prompt creation)
-    const githubData = await fetchGitHubData({
-      octokits: octokit,
-      repository: `${context.repository.owner}/${context.repository.repo}`,
-      prNumber: context.entityNumber.toString(),
-      isPR: context.isPR,
-      triggerUsername: context.actor,
-    });
+    // Skip fetching GitHub data if entityNumber is 0 (workflow_dispatch without issue data)
+    let githubData: any = null;
+    if (context.entityNumber > 0) {
+      githubData = await fetchGitHubData({
+        octokits: octokit,
+        repository: `${context.repository.owner}/${context.repository.repo}`,
+        prNumber: context.entityNumber.toString(),
+        isPR: context.isPR,
+        triggerUsername: context.actor,
+      });
+    } else if (context.eventName === "workflow_dispatch") {
+      // For workflow_dispatch without issue data, create minimal GitHub data structure
+      console.log("workflow_dispatch without issue data - creating minimal GitHub data structure");
+      githubData = {
+        contextData: {
+          number: 0,
+          title: "Workflow Dispatch",
+          body: process.env.DIRECT_PROMPT || "Triggered via workflow_dispatch",
+          state: "OPEN",
+          author: { login: context.actor },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        comments: [],
+        changedFiles: [],
+        changedFilesWithSHA: [],
+        reviewData: null,
+        imageUrlMap: new Map(),
+      };
+    } else {
+      throw new Error("Entity number is required for non-workflow_dispatch events");
+    }
 
     // Step 8: Setup branch
     const branchInfo = await setupBranch(octokit, githubData, context);

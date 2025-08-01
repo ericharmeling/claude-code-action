@@ -140,11 +140,43 @@ export function parseGitHubContext(): ParsedGitHubContext {
       };
     }
     case "workflow_dispatch": {
+      // Check for issue data passed via environment variables
+      let entityNumber = 0;
+      let isPR = false;
+      
+      // Try to parse ISSUE_DATA from environment variable
+      const issueDataEnv = process.env.ISSUE_DATA;
+      if (issueDataEnv) {
+        try {
+          const issueData = JSON.parse(issueDataEnv);
+          if (issueData.number && typeof issueData.number === 'number') {
+            entityNumber = issueData.number;
+            console.log(`workflow_dispatch: Found issue number ${entityNumber} from ISSUE_DATA`);
+          }
+          // Check if it's a PR based on the data (you can extend this logic)
+          if (issueData.pull_request) {
+            isPR = true;
+          }
+        } catch (error) {
+          console.error('Failed to parse ISSUE_DATA:', error);
+          console.log('ISSUE_DATA content:', issueDataEnv);
+        }
+      }
+      
+      // Fallback: check for issue_number in workflow inputs
+      if (entityNumber === 0 && context.payload.inputs?.issue_number) {
+        const inputNumber = parseInt(context.payload.inputs.issue_number, 10);
+        if (!isNaN(inputNumber) && inputNumber > 0) {
+          entityNumber = inputNumber;
+          console.log(`workflow_dispatch: Found issue number ${entityNumber} from workflow inputs`);
+        }
+      }
+      
       return {
         ...commonFields,
         payload: context.payload as WorkflowDispatchEvent,
-        entityNumber: 0, // workflow_dispatch doesn't have an issue/PR number
-        isPR: false,
+        entityNumber,
+        isPR,
       };
     }
     default:
