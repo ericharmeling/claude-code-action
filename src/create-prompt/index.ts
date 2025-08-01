@@ -337,6 +337,52 @@ export function prepareContext(
       };
       break;
 
+    case "workflow_dispatch":
+      // workflow_dispatch can be triggered with or without an issue/PR
+      if (issueNumber) {
+        // Triggered with an issue number
+        if (!baseBranch) {
+          throw new Error("BASE_BRANCH is required for workflow_dispatch with issue");
+        }
+        if (!claudeBranch) {
+          throw new Error("CLAUDE_BRANCH is required for workflow_dispatch with issue");
+        }
+        eventData = {
+          eventName: "workflow_dispatch",
+          eventAction: "triggered",
+          isPR: false,
+          issueNumber,
+          baseBranch,
+          claudeBranch,
+        };
+      } else if (prNumber) {
+        // Triggered with a PR number
+        eventData = {
+          eventName: "workflow_dispatch",
+          eventAction: "triggered",
+          isPR: true,
+          prNumber,
+          ...(claudeBranch && { claudeBranch }),
+          ...(baseBranch && { baseBranch }),
+        };
+      } else {
+        // Direct workflow_dispatch without issue/PR (uses DIRECT_PROMPT)
+        if (!baseBranch) {
+          throw new Error("BASE_BRANCH is required for workflow_dispatch");
+        }
+        if (!claudeBranch) {
+          throw new Error("CLAUDE_BRANCH is required for workflow_dispatch");
+        }
+        eventData = {
+          eventName: "workflow_dispatch",
+          eventAction: "triggered",
+          isPR: false,
+          baseBranch,
+          claudeBranch,
+        };
+      }
+      break;
+
     default:
       throw new Error(`Unsupported event type: ${eventName}`);
   }
@@ -397,6 +443,12 @@ export function getEventTypeAndContext(envVars: PreparedContext): {
         triggerContext: eventData.eventAction
           ? `pull request ${eventData.eventAction}`
           : `pull request event`,
+      };
+
+    case "workflow_dispatch":
+      return {
+        eventType: "WORKFLOW_DISPATCH",
+        triggerContext: `workflow dispatch event`,
       };
 
     default:
@@ -593,9 +645,11 @@ ${eventData.isPR ? formattedChangedFiles || "No files changed" : ""}
 <trigger_context>${triggerContext}</trigger_context>
 <repository>${context.repository}</repository>
 ${
-  eventData.isPR
+  eventData.isPR && "prNumber" in eventData
     ? `<pr_number>${eventData.prNumber}</pr_number>`
-    : `<issue_number>${eventData.issueNumber ?? ""}</issue_number>`
+    : !eventData.isPR && "issueNumber" in eventData
+    ? `<issue_number>${eventData.issueNumber}</issue_number>`
+    : ""
 }
 <claude_comment_id>${context.claudeCommentId}</claude_comment_id>
 <trigger_username>${context.triggerUsername ?? "Unknown"}</trigger_username>

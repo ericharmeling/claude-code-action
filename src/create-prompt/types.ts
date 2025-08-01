@@ -88,6 +88,33 @@ type PullRequestEvent = {
   baseBranch?: string;
 };
 
+// Workflow dispatch events
+type WorkflowDispatchWithIssueEvent = {
+  eventName: "workflow_dispatch";
+  eventAction: "triggered";
+  isPR: false;
+  issueNumber: string;
+  baseBranch: string;
+  claudeBranch: string;
+};
+
+type WorkflowDispatchWithPREvent = {
+  eventName: "workflow_dispatch";
+  eventAction: "triggered";
+  isPR: true;
+  prNumber: string;
+  claudeBranch?: string;
+  baseBranch?: string;
+};
+
+type WorkflowDispatchDirectEvent = {
+  eventName: "workflow_dispatch";
+  eventAction: "triggered";
+  isPR: false;
+  baseBranch: string;
+  claudeBranch: string;
+};
+
 // Union type for all possible event types
 export type EventData =
   | PullRequestReviewCommentEvent
@@ -97,7 +124,10 @@ export type EventData =
   | IssueOpenedEvent
   | IssueAssignedEvent
   | IssueLabeledEvent
-  | PullRequestEvent;
+  | PullRequestEvent
+  | WorkflowDispatchWithIssueEvent
+  | WorkflowDispatchWithPREvent
+  | WorkflowDispatchDirectEvent;
 
 // Combined type with separate eventData field
 export type PreparedContext = CommonFields & {
