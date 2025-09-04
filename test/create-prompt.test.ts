@@ -20,7 +20,7 @@ describe("generatePrompt", () => {
     prepareContext: (context) => ({ mode: "tag", githubContext: context }),
     getAllowedTools: () => [],
     getDisallowedTools: () => [],
-    shouldCreateTrackingComment: () => true,
+    shouldCreateTrackingComment: (context) => !context.inputs.disableComments,
     generatePrompt: (context, githubData, useCommitSigning) =>
       generateDefaultPrompt(context, githubData, useCommitSigning),
     prepare: async () => ({

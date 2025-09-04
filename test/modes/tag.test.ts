@@ -19,7 +19,7 @@ describe("Tag Mode", () => {
     expect(tagMode.description).toBe(
       "Traditional implementation mode triggered by @claude mentions",
     );
-    expect(tagMode.shouldCreateTrackingComment()).toBe(true);
+    expect(tagMode.shouldCreateTrackingComment(mockContext)).toBe(true); // Because mockContext has disableComments: false by default
   });
 
   test("shouldTrigger delegates to checkContainsTrigger", () => {
