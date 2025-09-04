@@ -30,6 +30,7 @@ describe("prepareMcpConfig", () => {
       labelTrigger: "",
       branchPrefix: "",
       useStickyComment: false,
+      disableComments: false,
       useCommitSigning: false,
       allowedBots: "",
     },

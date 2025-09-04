@@ -49,8 +49,9 @@ export const tagMode: Mode = {
     return [];
   },
 
-  shouldCreateTrackingComment() {
-    return true;
+  shouldCreateTrackingComment(context) {
+    // Don't create tracking comments if comments are disabled
+    return !context.inputs.disableComments;
   },
 
   async prepare({
@@ -66,9 +67,14 @@ export const tagMode: Mode = {
     // Check if actor is human
     await checkHumanActor(octokit.rest, context);
 
-    // Create initial tracking comment
-    const commentData = await createInitialComment(octokit.rest, context);
-    const commentId = commentData.id;
+    // Create initial tracking comment (skip if comments are disabled)
+    let commentId: number | undefined;
+    let commentData: any | undefined;
+
+    if (!context.inputs.disableComments) {
+      commentData = await createInitialComment(octokit.rest, context);
+      commentId = commentData.id;
+    }
 
     const githubData = await fetchGitHubData({
       octokits: octokit,
@@ -84,7 +90,7 @@ export const tagMode: Mode = {
     // Configure git authentication if not using commit signing
     if (!context.inputs.useCommitSigning) {
       try {
-        await configureGitAuth(githubToken, context, commentData.user);
+        await configureGitAuth(githubToken, context, commentData?.user);
       } catch (error) {
         console.error("Failed to configure git authentication:", error);
         throw error;
@@ -107,7 +113,7 @@ export const tagMode: Mode = {
       repo: context.repository.repo,
       branch: branchInfo.claudeBranch || branchInfo.currentBranch,
       baseBranch: branchInfo.baseBranch,
-      claudeCommentId: commentId.toString(),
+      claudeCommentId: commentId?.toString(),
       allowedTools: [],
       context,
     });

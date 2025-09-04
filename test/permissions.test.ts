@@ -66,6 +66,7 @@ describe("checkWritePermissions", () => {
       labelTrigger: "",
       branchPrefix: "claude/",
       useStickyComment: false,
+      disableComments: false,
       useCommitSigning: false,
       allowedBots: "",
     },

@@ -1,0 +1,41 @@
+name: Claude with Disabled Comments
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+
+jobs:
+  claude-no-comments:
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'issues' && contains(github.event.issue.body, '@claude'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write  # Required for GitHub App token generation
+    steps:
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          trigger_phrase: "@claude"
+          # Disable all comments - Claude will work silently
+          disable_comments: "true"
+          claude_args: "--max-turns 30"
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Or use OAuth token
+          # CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+# With comments disabled:
+# - Claude will NOT post an initial "Claude Code is working..." comment
+# - Claude will NOT post a final comment with results, links, or execution details
+# - The action will still create branches and make code changes as requested
+# - You can view the action's progress and results in the GitHub Actions run log
+# - This is useful for automated workflows where comment notifications aren't needed

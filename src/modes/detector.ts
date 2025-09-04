@@ -3,6 +3,7 @@ import {
   isEntityContext,
   isIssueCommentEvent,
   isPullRequestReviewCommentEvent,
+  isWorkflowDispatchEvent,
 } from "../github/context";
 import { checkContainsTrigger } from "../github/validation/trigger";
 
@@ -29,6 +30,11 @@ export function detectMode(context: GitHubContext): AutoDetectedMode {
       if (checkContainsTrigger(context)) {
         return "tag";
       }
+    }
+
+    // Handle workflow_dispatch with entity data (issue number)
+    if (isWorkflowDispatchEvent(context) && context.entityNumber > 0) {
+      return "tag"; // Use tag mode for entity-based workflow dispatch
     }
   }
 

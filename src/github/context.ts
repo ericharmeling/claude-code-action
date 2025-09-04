@@ -43,6 +43,7 @@ const ENTITY_EVENT_NAMES = [
   "pull_request",
   "pull_request_review",
   "pull_request_review_comment",
+  "workflow_dispatch", // Can be entity event when issue data is provided
 ] as const;
 
 const AUTOMATION_EVENT_NAMES = [
@@ -73,6 +74,7 @@ type BaseContext = {
     baseBranch?: string;
     branchPrefix: string;
     useStickyComment: boolean;
+    disableComments: boolean;
     useCommitSigning: boolean;
     allowedBots: string;
   };
@@ -120,6 +122,7 @@ export function parseGitHubContext(): GitHubContext {
       baseBranch: process.env.BASE_BRANCH,
       branchPrefix: process.env.BRANCH_PREFIX ?? "claude/",
       useStickyComment: process.env.USE_STICKY_COMMENT === "true",
+      disableComments: process.env.DISABLE_COMMENTS === "true",
       useCommitSigning: process.env.USE_COMMIT_SIGNING === "true",
       allowedBots: process.env.ALLOWED_BOTS ?? "",
     },
@@ -177,6 +180,52 @@ export function parseGitHubContext(): GitHubContext {
       };
     }
     case "workflow_dispatch": {
+      // Check for issue data passed via environment variables or workflow inputs
+      let entityNumber = 0;
+      let isPR = false;
+
+      // Try to parse ISSUE_DATA from environment variable (for advanced workflows)
+      const issueDataEnv = process.env.ISSUE_DATA;
+      if (issueDataEnv) {
+        try {
+          const issueData = JSON.parse(issueDataEnv);
+          if (issueData.number && typeof issueData.number === "number") {
+            entityNumber = issueData.number;
+            console.log(
+              `workflow_dispatch: Found issue number ${entityNumber} from ISSUE_DATA`,
+            );
+          }
+          if (issueData.pull_request) {
+            isPR = true;
+          }
+        } catch (error) {
+          console.error("Failed to parse ISSUE_DATA:", error);
+        }
+      }
+
+      // Fallback: check for issue_number in workflow inputs
+      if (entityNumber === 0 && context.payload.inputs?.issue_number) {
+        const inputNumber = parseInt(context.payload.inputs.issue_number, 10);
+        if (!isNaN(inputNumber) && inputNumber > 0) {
+          entityNumber = inputNumber;
+          console.log(
+            `workflow_dispatch: Found issue number ${entityNumber} from workflow inputs`,
+          );
+        }
+      }
+
+      // If we have entity data, return as entity context for compatibility with existing modes
+      if (entityNumber > 0) {
+        return {
+          ...commonFields,
+          eventName: "workflow_dispatch" as EntityEventName,
+          payload: context.payload as any, // WorkflowDispatchEvent cast for compatibility
+          entityNumber,
+          isPR,
+        } as ParsedGitHubContext;
+      }
+
+      // Otherwise return as automation context
       return {
         ...commonFields,
         eventName: "workflow_dispatch",
@@ -252,4 +301,11 @@ export function isAutomationContext(
   return AUTOMATION_EVENT_NAMES.includes(
     context.eventName as AutomationEventName,
   );
+}
+
+// Type guard for workflow_dispatch events
+export function isWorkflowDispatchEvent(
+  context: GitHubContext,
+): context is ParsedGitHubContext & { payload: WorkflowDispatchEvent } {
+  return context.eventName === "workflow_dispatch";
 }

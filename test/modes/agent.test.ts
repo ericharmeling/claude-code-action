@@ -31,7 +31,7 @@ describe("Agent Mode", () => {
     expect(agentMode.description).toBe(
       "Direct automation mode for explicit prompts",
     );
-    expect(agentMode.shouldCreateTrackingComment()).toBe(false);
+    expect(agentMode.shouldCreateTrackingComment(mockContext)).toBe(false);
     expect(agentMode.getAllowedTools()).toEqual([]);
     expect(agentMode.getDisallowedTools()).toEqual([]);
   });

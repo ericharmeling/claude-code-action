@@ -17,6 +17,7 @@ const defaultInputs = {
   labelTrigger: "",
   branchPrefix: "claude/",
   useStickyComment: false,
+  disableComments: false,
   useCommitSigning: false,
   allowedBots: "",
 };

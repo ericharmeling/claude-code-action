@@ -38,7 +38,7 @@ export const agentMode: Mode = {
     return [];
   },
 
-  shouldCreateTrackingComment() {
+  shouldCreateTrackingComment(_context) {
     return false;
   },
 
