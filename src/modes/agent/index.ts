@@ -57,11 +57,14 @@ export const agentMode: Mode = {
     return !!context.inputs?.prompt;
   },
 
-  prepareContext(context) {
+  prepareContext(context, data) {
     // Agent mode doesn't use comment tracking or branch management
     return {
       mode: "agent",
       githubContext: context,
+      commentId: data?.commentId,
+      baseBranch: data?.baseBranch,
+      claudeBranch: data?.claudeBranch,
     };
   },
 
